@@ -9,4 +9,8 @@ const api = express.Router();
 
 api.post('/agregarProductos', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.AgregarProductos);
 
+api.put('/editarProductos/:idProducto', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.editarProductos);
+
+api.get('/obtenerProductos', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.obtenerProductos);
+
 module.exports = api;

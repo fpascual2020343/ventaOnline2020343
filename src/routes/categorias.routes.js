@@ -9,6 +9,8 @@ const api = express.Router();
 
 api.post('/agregarCategoria' , [md_autenticacion.Auth, md_roles.ADMIN], categoriasControlador.agregarCategoria);
 api.put('/editarCategoria/:idCategoria', [md_autenticacion.Auth, md_roles.ADMIN], categoriasControlador.editarCategoria);
+api.delete('/eliminarCategoria/:idCategoria', [md_autenticacion.Auth, md_roles.ADMIN], categoriasControlador.eliminarCategoriaDefaut);
+api.get('/obtenerCategorias', [md_autenticacion.Auth, md_roles.ADMIN], categoriasControlador.obtenerCategorias);
 
 module.exports = api;
 
