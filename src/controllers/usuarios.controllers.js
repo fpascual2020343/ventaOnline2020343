@@ -72,40 +72,53 @@ function agregarUsuario(req, res) {
 
         } else {
 
-            Usuario.find({ usuario: parametros.usuario }, (err, existente2) => {
+            if (parametros.nombre && parametros.apellido && parametros.email && parametros.usuario && parametros.rol) {
 
-                if (parametros.nombre && parametros.apellido && parametros.email && parametros.usuario && parametros.rol) {
+                modeloUsuarios.usuario = parametros.usuario;
+                modeloUsuarios.nombre = parametros.nombre;
+                modeloUsuarios.apellido = parametros.apellido;
+                modeloUsuarios.email = parametros.email;
+                modeloUsuarios.rol = parametros.rol;
 
-                    modeloUsuarios.nombre = parametros.nombre;
-                    modeloUsuarios.apellido = parametros.apellido;
-                    modeloUsuarios.email = parametros.email;
-                    modeloUsuarios.usuario = parametros.usuario;
-                    modeloUsuarios.rol = parametros.rol;
+                bcrypt.hash(parametros.password, null, null, (err, passwordEncriptada) => {
 
-                    bcrypt.hash(parametros.password, null, null, (err, passwordEncriptada) => {
+                    modeloUsuarios.password = passwordEncriptada;
 
-                        modeloUsuarios.password = passwordEncriptada;
+                    modeloUsuarios.save((err, usuarioGuardado) => {
 
-                        modeloUsuarios.save((err, usuarioGuardado) => {
+                        if (err) return res.status(404).send({ mensaje: "Error en la peticion" })
+                        if (!usuarioGuardado) return res.status(404).send({ mensaje: "Error al guardar al usuario" });
 
-                            if (err) return res.status(404).send({ mensaje: "Error en la peticion" })
-                            if (!usuarioGuardado) return res.status(404).send({ mensaje: "Error al guardar al usuario" });
-
-                            return res.status(200).send({ Usuario: usuarioGuardado });
-                        })
+                        return res.status(200).send({ Usuario: usuarioGuardado });
                     })
+                })
 
-                } else {
-                    return res.status(400).send({ mensaje: "Debe de agregar los parametros Obligatorios" });
-                }
-
-            })
+            } else {
+                return res.status(400).send({ mensaje: "Debe de agregar los parametros Obligatorios" });
+            }
 
         }
 
     })
 
 }
+
+function editarUsuariosAdminoCliente(req, res) {
+
+    var parametros = req.body;
+    var idUser = req.params.idUsuario;
+
+    delete parametros.password;
+
+    Usuario.findByIdAndUpdate(idUser, parametros, { new: true }, (err, usuarioEditado) => {
+
+        if (err) return res.status(500).send({ mensaje: 'Error en la petición' });
+        if (!usuarioEditado) return res.status(404).send({ mensaje: 'Error al editar el usuario' });
+
+        return res.status(200).send({ Usuario: usuarioEditado });
+    })
+}
+
 
 function editarUsuarios(req, res) {
 
@@ -170,11 +183,55 @@ function eliminarUsuarios(req, res) {
 
 }
 
+function editarCuentaCliente(req, res) {
+
+    var parametros = req.body;
+    var usuarioLogeado = req.params.idUsuario;
+
+    delete parametros.password;
+    delete parametros.rol;
+
+    if (req.user.sub !== usuarioLogeado) {
+        return res.status(500).send({ mensaje: 'No tiene los permisos para editar otro usuario que no sea el suyo' });
+    } else {
+
+        Usuario.findByIdAndUpdate(req.user.sub, parametros, { new: true }, (err, usuarioEditado) => {
+            if (err) return res.status(500).send({ mensaje: 'Error en  la peticion' });
+            if (!usuarioEditado) return res.status(500).send({ mensaje: 'Error al editar el Usuario' });
+
+            return res.status(200).send({ usuario: usuarioEditado });
+        })
+    }
+}
+
+function eliminarCuentaCliente(req, res) {
+
+    var usuarioLogeado = req.params.idUsuario;
+
+    if (req.user.sub !== usuarioLogeado) {
+        return res.status(500).send({ mensaje: 'No tiene los permisos para eliminar otro usuario que no sea el suyo' });
+    } else {
+
+        Usuario.findByIdAndDelete(usuarioLogeado, (err, usuarioClienteEliminado) => {
+            if (err) return res.status(500).send({ mensaje: 'Error en  la peticion' });
+            if (!usuarioClienteEliminado) return res.status(500).send({ mensaje: 'Error al elimiar el Usuario' });
+
+            return res.status(200).send({ usuario: usuarioClienteEliminado });
+        })
+    }
+
+}
 
 module.exports = {
     registrarAdminDefault,
     Login,
     agregarUsuario,
+    editarUsuariosAdminoCliente,
+
+
     editarUsuarios,
-    eliminarUsuarios
+    eliminarUsuarios,
+
+    editarCuentaCliente,
+    eliminarCuentaCliente
 }

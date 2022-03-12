@@ -63,9 +63,27 @@ function obtenerProductos(req, res) {
 
 }
 
+function obtenerProductoPorNombre (req, res) {
+
+    var parametros = req.body;
+    
+    Productos.find({producto: { $regex: parametros.producto, $options: "i" }}, (err, productoEncontrado)=>{
+
+        if(err) return res.status(500).send({ mensaje: 'Error en  la peticion'});
+        
+        if(!productoEncontrado) return res.status(500).send({ mensaje: 'Error al obtener el producto'})
+
+        return res.status(200).send({ producto: productoEncontrado })
+
+    }).populate('idCategoria', 'nombre');
+
+
+}
+
 
 module.exports = {
     AgregarProductos,
     editarProductos,
-    obtenerProductos
+    obtenerProductos,
+    obtenerProductoPorNombre
 }
