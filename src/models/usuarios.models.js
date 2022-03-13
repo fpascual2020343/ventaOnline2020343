@@ -11,7 +11,8 @@ const usuarioSchema = new Schema({
     carrito: [{
         nombreProducto: String,
         cantidadComprada: Number,
-        precioUnitario: Number
+        precioUnitario: Number,
+        subTotal: Number
     }],
     totalCarrito: Number
 })

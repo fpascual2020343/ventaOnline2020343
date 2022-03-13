@@ -55,35 +55,68 @@ function editarProductos(req, res) {
 function obtenerProductos(req, res) {
 
     Productos.find({}, (err, productoEncontrado) => {
-        if(err) return res.status(400).send({ mensaje: "Error en la peticion"});
-        if(!productoEncontrado) return res.status(404).send({ mensaje: "Error al encontrar los productos"});
+        if (err) return res.status(400).send({ mensaje: "Error en la peticion" });
+        if (!productoEncontrado) return res.status(404).send({ mensaje: "Error al encontrar los productos" });
 
-        return res.status(200).send({productos: productoEncontrado});
+        return res.status(200).send({ productos: productoEncontrado });
     }).populate("idCategoria", "nombre");
 
 }
 
-function obtenerProductoPorNombre (req, res) {
+function obtenerProductoPorNombre(req, res) {
 
     var parametros = req.body;
-    
-    Productos.find({producto: { $regex: parametros.producto, $options: "i" }}, (err, productoEncontrado)=>{
 
-        if(err) return res.status(500).send({ mensaje: 'Error en  la peticion'});
-        
-        if(!productoEncontrado) return res.status(500).send({ mensaje: 'Error al obtener el producto'})
+    Productos.find({ producto: { $regex: parametros.producto, $options: "i" } }, (err, productoEncontrado) => {
+
+        if (err) return res.status(500).send({ mensaje: 'Error en  la peticion' });
+
+        if (!productoEncontrado) return res.status(500).send({ mensaje: 'Error al obtener el producto' })
 
         return res.status(200).send({ producto: productoEncontrado })
 
     }).populate('idCategoria', 'nombre');
 
-
 }
 
+function obtenerProductosPorCategoria(res, req) {
+
+    var parametros = req.body;
+
+    Categoria.findOne({ nombre: parametros.categoria }, (err, categoriaEncontrada) => {
+
+        if (err) return res.status(500).send({ mensaje: 'Error en  la peticion' });
+        if (!categoriaEncontrada) return res.status(500).send({ mensaje: 'Error al obtener la categoria' });
+
+        Productos.find({ idCategoria: categoriaEncontrada._id, parametros}, (err, productosEncontrada) => {
+
+            if (err) return res.status(500).send({ mensaje: 'Error en  la peticion' });
+            if (!productosEncontrada) return res.status(500).send({ mensaje: 'Error al obtener los productos' });
+
+            return res.status(200).send({ producto: productosEncontrada});
+        })
+    })
+}
+
+// Incrementar stock productos
+function stockProducto(req, res) {
+    const productoId = req.params.idProducto;
+    const parametros = req.body;
+
+    Productos.findByIdAndUpdate(productoId, { $inc : {cantidad : parametros.cantidad} }, {new : true},
+        (err, stockModificado)=>{
+            if(err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+            if(!stockModificado) return res.status(500).send({mensaje: 'Error incrementar la cantidad del producto'});
+
+            return res.status(200).send({ producto: stockModificado })
+        });
+}
 
 module.exports = {
     AgregarProductos,
     editarProductos,
+    stockProducto,
     obtenerProductos,
-    obtenerProductoPorNombre
+    obtenerProductoPorNombre,
+    obtenerProductosPorCategoria
 }

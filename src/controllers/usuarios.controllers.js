@@ -1,4 +1,5 @@
 const Usuario = require('../models/usuarios.models');
+const Producto = require('../models/productos.model');
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('../services/jwt');
 
@@ -58,7 +59,6 @@ function Login(req, res) {
     })
 }
 
-
 function agregarUsuario(req, res) {
 
     var parametros = req.body;
@@ -79,6 +79,7 @@ function agregarUsuario(req, res) {
                 modeloUsuarios.apellido = parametros.apellido;
                 modeloUsuarios.email = parametros.email;
                 modeloUsuarios.rol = parametros.rol;
+                modeloUsuarios.totalCarrito = 0;
 
                 bcrypt.hash(parametros.password, null, null, (err, passwordEncriptada) => {
 
@@ -118,7 +119,6 @@ function editarUsuariosAdminoCliente(req, res) {
         return res.status(200).send({ Usuario: usuarioEditado });
     })
 }
-
 
 function editarUsuarios(req, res) {
 
@@ -222,6 +222,98 @@ function eliminarCuentaCliente(req, res) {
 
 }
 
+function agregarProductoCarrito(req, res) {
+    const parametros = req.body;
+
+    Producto.findOne({ producto: parametros.producto }, (err, productoEncontrado) => {
+        if (err) return res.status(500).send({ mensaje: 'Error en  la peticion producto' });
+        if (!productoEncontrado) return res.status(500).send({ mensaje: 'Erorr al buscar el producto' });
+
+        Usuario.findByIdAndUpdate(req.user.sub, {
+            $push: {
+                carrito: {
+                    nombreProducto: parametros.producto,
+                    cantidadComprada: parametros.cantidad, precioUnitario: productoEncontrado.precio, subTotal: productoEncontrado.precio * parametros.cantidad
+                }
+            }
+        }, { new: true },
+            (err, productoAgregadoCarrito) => {
+
+                if (err) return res.status(500).send({ mensaje: 'Error en  la peticion del carrito' })
+                if (!productoAgregadoCarrito) return res.status(500).send({ mensaje: 'Error al agregar el producto al carrito' });
+
+                let totalCarritoLocal = 0;
+                for (let i = 0; i < productoAgregadoCarrito.carrito.length; i++) {
+                    totalCarritoLocal += productoAgregadoCarrito.carrito[i].subTotal;
+                }
+
+                Usuario.findByIdAndUpdate(req.user.sub, { totalCarrito: totalCarritoLocal }, { new: true },
+                    (err, totalActualizado) => {
+                        if (err) return res.status(500).send({ mensaje: 'Error en  la peticion total Carrito' });
+                        if (!totalActualizado) return res.status(500).send({ mensaje: 'Error al actualizar el total del carrito' });
+
+                        return res.status(200).send({ usuario: totalActualizado })
+                    })
+
+            })
+    })
+
+}
+
+function eliminarProductoCarrito(req, res) {
+
+    var productoCarritoId = req.params.idProducto;
+
+    Usuario.findOneAndUpdate({ carrito: { $elemMatch: { _id: productoCarritoId } } },
+        { $pull: { carrito: { _id: productoCarritoId } } }, { new: true }, (err, productoEliminado) => {
+            if (err) return res.status(500).send({ mensaje: 'Error en la peticion' });
+            if (!productoEliminado) return res.status(500).send({ mensaje: 'Error al eliminar el producto del carrito' });
+
+            let totalCarritoLocal = 0;
+                for (let i = 0; i < productoEliminado.carrito.length; i++) {
+                    totalCarritoLocal += productoEliminado.carrito[i].subTotal;
+                }
+
+                Usuario.findByIdAndUpdate(req.user.sub, { totalCarrito: totalCarritoLocal }, { new: true },
+                    (err, totalActualizado) => {
+                        if (err) return res.status(500).send({ mensaje: 'Error en  la peticion total Carrito' });
+                        if (!totalActualizado) return res.status(500).send({ mensaje: 'Error al actualizar el total del carrito' });
+
+                        return res.status(200).send({ usuario: totalActualizado })
+                    })
+
+        })
+
+
+}
+
+function visualizarCarrito(req, res) {
+
+    var logeado = req.user.sub;
+    Usuario.findById(logeado , (err, productosEncontrados)=>{
+
+        let productos = []
+        for(let i = 0; i < productosEncontrados.carrito.length; i++){
+            
+            productos.push(`producto: ${productosEncontrados.carrito[i].nombreProducto} 
+            cantidad:${ productosEncontrados.carrito[i].cantidadComprada}  
+            precio: Q.${productosEncontrados.carrito[i].precioUnitario}  
+            subtotal: Q.${productosEncontrados.carrito[i].subTotal}`)
+           
+        }
+        let TotalCarrito = []
+        for(let i = 0; i < productosEncontrados.carrito.length; i++){
+            
+            TotalCarrito.push(`total: Q.${productosEncontrados.carrito[i].totalCarrito}`)
+           
+        }
+        return res.status(200).send({Carrito: productos,TotalCarrito})
+    })
+   
+}
+
+
+
 module.exports = {
     registrarAdminDefault,
     Login,
@@ -233,5 +325,9 @@ module.exports = {
     eliminarUsuarios,
 
     editarCuentaCliente,
-    eliminarCuentaCliente
+    eliminarCuentaCliente,
+
+    agregarProductoCarrito,
+    eliminarProductoCarrito,
+    visualizarCarrito
 }
