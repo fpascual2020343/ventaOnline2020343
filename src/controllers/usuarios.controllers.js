@@ -304,7 +304,7 @@ function visualizarCarrito(req, res) {
         let TotalCarrito = []
         for(let i = 0; i < productosEncontrados.carrito.length; i++){
             
-            TotalCarrito.push(`total: Q.${productosEncontrados.carrito[i].totalCarrito}`)
+            TotalCarrito.push(`total: Q.${productosEncontrados.totalCarrito}`)
            
         }
         return res.status(200).send({Carrito: productos,TotalCarrito})

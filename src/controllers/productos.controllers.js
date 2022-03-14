@@ -112,11 +112,25 @@ function stockProducto(req, res) {
         });
 }
 
+function obtenerAgotados(req, res) {
+
+    Productos.find({ cantidad: 0 }).exec(
+        (err, productosEncontrados) => {
+            if (err) {
+                res.status(500).send("Error en la peticion");
+            } else {
+                if (!productosEncontrados) return res.status(500).send({ mensaje: "No tiene productos con ese nombre" })
+                return res.status(200).send({ producto: productosEncontrados });
+            }
+        })
+}
+
 module.exports = {
     AgregarProductos,
     editarProductos,
     stockProducto,
     obtenerProductos,
     obtenerProductoPorNombre,
-    obtenerProductosPorCategoria
+    obtenerProductosPorCategoria,
+    obtenerAgotados
 }

@@ -11,6 +11,7 @@ api.post('/agregarProductos', [md_autenticacion.Auth, md_roles.ADMIN], productos
 api.put('/editarProductos/:idProducto', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.editarProductos);
 api.get('/obtenerProductos', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.obtenerProductos);
 api.put('/controlStock/:idProducto', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.stockProducto);
+api.get('/obtenerProductosAgotados', [md_autenticacion.Auth, md_roles.ADMIN], productosControlador.obtenerAgotados);
 //Cliente
 api.get('/obtenerProductosPorNombre', [md_autenticacion.Auth, md_roles.verCliente], productosControlador.obtenerProductoPorNombre);
 api.post('/obtenerProductosPorCategoria', [md_autenticacion.Auth, md_roles.verCliente], productosControlador.obtenerProductosPorCategoria);
